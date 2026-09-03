@@ -1,0 +1,1278 @@
+<!doctype html>
+<html lang="en" class="ds-247420" data-theme="auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#3F8A4A" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#3A9A34" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light dark">
+  <title>plugsdk — write a plugin once, deploy it everywhere</title>
+  <meta name="description" content="One plugin file. Every AI agent. Claude Code, OpenCode, Windsurf — and whatever ships next. Write once, deploy everywhere, never rewrite a hook again.">
+  <meta name="author" content="AnEntrypoint">
+  <meta name="keywords" content="plugsdk, plugin sdk, ai agent hooks, claude code, opencode, windsurf, universal hooks, agent plugins">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="plugsdk — universal plugin sdk for ai agents">
+  <meta property="og:description" content="write once, deploy everywhere. one hook file works across claude code, opencode, windsurf and beyond.">
+  <meta property="og:url" content="https://anentrypoint.github.io/plugsdk/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@AnEntrypoint">
+
+  <!-- raw.githack.com, not jsDelivr's npm-package path (anentrypoint-design
+       npm publishing has stopped, so @latest there is permanently stale)
+       or jsDelivr's gh/... GitHub-source path (caches a @main branch
+       reference for up to 12h regardless of purge). githack fetches
+       straight from GitHub with a 60s max-age. -->
+  <link rel="stylesheet" href="https://raw.githack.com/AnEntrypoint/design/main/dist/247420.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Nunito:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    .ds-247420 {
+      --panel-hover: color-mix(in oklab, var(--fg) 8%, var(--bg));
+      --panel-select: color-mix(in oklab, var(--accent) 18%, var(--bg));
+      --live: var(--green);
+      --link: var(--sky);
+
+      --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+      --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      background: var(--panel-0);
+      color: var(--panel-text);
+      font-family: var(--ff-ui);
+      font-size: 15px; line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    body { min-height: 100vh; overflow-x: hidden; }
+
+    a { color: var(--link); text-decoration: none; }
+    a:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+
+    /* ── topbar ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      height: 56px;
+      background: var(--panel-0);
+      display: flex; align-items: center;
+      padding: 0 var(--space-5); gap: var(--space-4);
+    }
+    .brand {
+      font-family: var(--ff-display);
+      font-size: 18px; letter-spacing: -.01em;
+      color: var(--panel-text);
+      display: flex; align-items: center; gap: var(--space-2);
+    }
+    .brand .glyph {
+      font-family: var(--ff-mono); font-size: 16px;
+      color: var(--green);
+    }
+    .brand .pip {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--live);
+      animation: pulse 2.4s ease infinite;
+    }
+    .topbar nav { margin-left: auto; display: flex; gap: var(--space-1); align-items: center; }
+    .topbar nav a {
+      color: var(--panel-text-2); font-size: 13px; font-weight: 500;
+      padding: 8px 14px; border-radius: 999px;
+      transition: background 80ms, color 80ms;
+    }
+    .topbar nav a:hover {
+      background: var(--panel-hover); color: var(--panel-text);
+      text-decoration: none;
+    }
+    .topbar nav .ext { font-family: var(--ff-mono); font-size: 12px; }
+
+    /* ── stage ── */
+    .stage { max-width: 1080px; margin: 0 auto; padding: 0 var(--space-5); }
+    .stage-narrow { max-width: 880px; margin: 0 auto; padding: 0 var(--space-5); }
+
+    /* ── hero ── */
+    .hero {
+      padding: var(--space-8) var(--space-5) var(--space-7);
+      max-width: 1080px; margin: 0 auto;
+      position: relative;
+    }
+    .hero-eyebrow {
+      font-family: var(--ff-mono); font-size: 11px; font-weight: 600;
+      color: var(--green);
+      letter-spacing: .04em;
+      margin-bottom: var(--space-5);
+      display: flex; align-items: center; gap: var(--space-2);
+    }
+    .hero-eyebrow .pip { width: 8px; height: 8px; border-radius: 50%; background: var(--live); animation: pulse 2.4s ease infinite; }
+    .hero h1 {
+      font-family: var(--ff-display);
+      font-size: clamp(56px, 11vw, 128px);
+      line-height: .92;
+      letter-spacing: -.03em;
+      color: var(--panel-text);
+      margin-bottom: var(--space-5);
+    }
+    .hero h1 .accent { color: var(--green); }
+    .hero h1 .accent-mascot { color: var(--mascot); }
+    .hero-lede {
+      font-size: 19px;
+      max-width: 60ch;
+      color: var(--panel-text-2);
+      line-height: 1.55;
+      margin-bottom: var(--space-6);
+    }
+    .hero-lede strong { color: var(--panel-text); font-weight: 600; }
+
+    .hero-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: var(--space-2);
+      padding: 12px 22px; border-radius: 999px;
+      font-family: var(--ff-ui);
+      font-size: 14px; font-weight: 600;
+      cursor: pointer;
+      text-decoration: none; border: none;
+      transition: background 100ms, color 100ms;
+    }
+    .btn:hover { text-decoration: none; }
+    .btn-primary { background: var(--green); color: #fff; }
+    .btn-primary:hover { background: #34743e; }
+    .btn-ghost { background: var(--panel-2); color: var(--panel-text); }
+    .btn-ghost:hover { background: var(--panel-hover); }
+    .btn .arrow { font-family: var(--ff-mono); font-size: 14px; }
+
+    .hero-badges {
+      display: flex; gap: var(--space-2); flex-wrap: wrap;
+      margin-top: var(--space-5);
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 999px;
+      background: var(--panel-2);
+      font-family: var(--ff-mono); font-size: 11px;
+      color: var(--panel-text-2);
+    }
+    .badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+    .badge .dot.green { background: var(--green); }
+    .badge .dot.mascot { background: var(--mascot); }
+    .badge .dot.sun { background: var(--sun); }
+    .badge .dot.sky { background: var(--sky); }
+
+    /* ── install bar ── */
+    .install-bar {
+      max-width: 1080px;
+      margin: 0 auto var(--space-8);
+      padding: 0 var(--space-5);
+      display: flex; align-items: stretch; gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+    .install-cli {
+      display: flex; align-items: center;
+      background: var(--panel-1);
+      border-radius: 14px; overflow: hidden;
+      flex: 1; min-width: 280px;
+      box-shadow: inset 4px 0 0 var(--green);
+    }
+    .install-cli .prompt {
+      font-family: var(--ff-mono); font-size: 13px; font-weight: 600;
+      color: var(--green);
+      padding: 14px 8px 14px 18px;
+    }
+    .install-cli code {
+      font-family: var(--ff-mono); font-size: 14px;
+      padding: 14px 8px;
+      flex: 1;
+      color: var(--panel-text);
+    }
+    .install-cli .copy-btn {
+      padding: 14px 18px; cursor: pointer;
+      background: transparent; border: none;
+      color: var(--panel-text-2); font-family: var(--ff-mono);
+      font-size: 12px; font-weight: 600;
+      transition: background 80ms, color 80ms;
+    }
+    .install-cli .copy-btn:hover { background: var(--panel-hover); color: var(--panel-text); }
+
+    .install-meta {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: 12px 18px;
+      background: var(--panel-1);
+      border-radius: 14px;
+      font-family: var(--ff-mono); font-size: 12px;
+      color: var(--panel-text-2);
+    }
+    .install-meta .stat { display: flex; align-items: center; gap: 6px; }
+    .install-meta .stat .num { color: var(--panel-text); font-weight: 600; }
+    .install-meta .stat .pip { width: 6px; height: 6px; border-radius: 50%; background: var(--live); }
+
+    /* ── section frame ── */
+    .section { padding: var(--space-7) 0; max-width: 1080px; margin: 0 auto; }
+    .section-head {
+      padding: 0 var(--space-5); margin-bottom: var(--space-6);
+    }
+    .section-eyebrow {
+      font-family: var(--ff-mono); font-size: 12px; font-weight: 600;
+      color: var(--mascot); letter-spacing: .04em;
+      margin-bottom: var(--space-3);
+    }
+    .section-h2 {
+      font-family: var(--ff-display);
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1;
+      letter-spacing: -.02em;
+      color: var(--panel-text);
+      margin-bottom: var(--space-4);
+    }
+    .section-lede {
+      font-size: 17px; max-width: 60ch;
+      color: var(--panel-text-2); line-height: 1.55;
+    }
+
+    /* ── when scenarios (3 panels) ── */
+    .when-grid {
+      padding: 0 var(--space-5);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: var(--space-4);
+    }
+    .scenario {
+      background: var(--panel-1);
+      border-radius: 20px;
+      padding: var(--space-5);
+      display: flex; flex-direction: column; gap: var(--space-3);
+      transition: background 100ms;
+    }
+    .scenario:hover { background: var(--panel-hover); }
+    .scenario.rail-green { box-shadow: inset 4px 0 0 var(--green); }
+    .scenario.rail-sun { box-shadow: inset 4px 0 0 var(--sun); }
+    .scenario.rail-mascot { box-shadow: inset 4px 0 0 var(--mascot); }
+    .scenario.rail-sky { box-shadow: inset 4px 0 0 var(--sky); }
+    .scenario .when-tag {
+      font-family: var(--ff-mono); font-size: 11px; font-weight: 600;
+      color: var(--panel-text-2);
+      letter-spacing: .04em;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .scenario .when-tag .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .scenario .when-tag .dot.green { background: var(--green); }
+    .scenario .when-tag .dot.sun { background: var(--sun); }
+    .scenario .when-tag .dot.mascot { background: var(--mascot); }
+    .scenario .when-tag .dot.sky { background: var(--sky); }
+    .scenario h3 {
+      font-family: var(--ff-ui); font-size: 22px; font-weight: 700;
+      color: var(--panel-text); line-height: 1.2;
+      letter-spacing: -.01em;
+    }
+    .scenario p {
+      font-size: 14.5px; color: var(--panel-text-2); line-height: 1.6;
+    }
+    .scenario .quote {
+      font-family: var(--ff-mono); font-size: 12px;
+      color: var(--panel-text-2);
+      padding: var(--space-3) var(--space-4);
+      background: var(--panel-2);
+      border-radius: 10px;
+      margin-top: var(--space-2);
+    }
+    .scenario .quote::before { content: '“'; color: var(--panel-text-3); margin-right: 4px; }
+    .scenario .quote::after { content: '”'; color: var(--panel-text-3); margin-left: 4px; }
+
+    /* ── why: problem / solution split ── */
+    .why-grid {
+      padding: 0 var(--space-5);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+    }
+    @media (max-width: 720px) { .why-grid { grid-template-columns: 1fr; } }
+    .why-card {
+      background: var(--panel-1);
+      border-radius: 20px;
+      padding: var(--space-6);
+      display: flex; flex-direction: column; gap: var(--space-4);
+    }
+    .why-card.problem { box-shadow: inset 4px 0 0 var(--flame); }
+    .why-card.solution { box-shadow: inset 4px 0 0 var(--green); }
+    .why-card .label {
+      font-family: var(--ff-mono); font-size: 12px; font-weight: 600;
+      letter-spacing: .04em;
+      display: flex; align-items: center; gap: var(--space-2);
+    }
+    .why-card.problem .label { color: var(--flame); }
+    .why-card.solution .label { color: var(--green); }
+    .why-card .label .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .why-card.problem .label .dot { background: var(--flame); }
+    .why-card.solution .label .dot { background: var(--green); }
+    .why-card h3 {
+      font-family: var(--ff-display);
+      font-size: 28px; line-height: 1; letter-spacing: -.02em;
+      color: var(--panel-text);
+    }
+    .why-list {
+      list-style: none; display: flex; flex-direction: column; gap: var(--space-3);
+    }
+    .why-list li {
+      font-size: 14.5px; line-height: 1.55;
+      color: var(--panel-text);
+      display: flex; gap: var(--space-3);
+    }
+    .why-list li .num {
+      font-family: var(--ff-mono); font-size: 11px; font-weight: 600;
+      color: var(--panel-text-3); flex-shrink: 0;
+      padding-top: 2px;
+      min-width: 24px;
+    }
+    .why-list li .strike { color: var(--panel-text-3); text-decoration: line-through; }
+
+    /* ── how: step ladder ── */
+    .how-stage { padding: 0 var(--space-5); }
+    .step {
+      background: var(--panel-1);
+      border-radius: 20px;
+      padding: var(--space-5) var(--space-6);
+      margin-bottom: var(--space-3);
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: var(--space-5);
+      align-items: start;
+      box-shadow: inset 4px 0 0 var(--green);
+    }
+    .step.purple { box-shadow: inset 4px 0 0 var(--purple); }
+    .step.sun { box-shadow: inset 4px 0 0 var(--sun); }
+    .step.mascot { box-shadow: inset 4px 0 0 var(--mascot); }
+    .step .step-num {
+      font-family: var(--ff-mono); font-size: 32px; font-weight: 600;
+      color: var(--panel-text-3); line-height: 1;
+      padding-top: 4px;
+    }
+    .step .step-body { display: flex; flex-direction: column; gap: var(--space-3); }
+    .step h4 {
+      font-family: var(--ff-ui); font-size: 22px; font-weight: 700;
+      color: var(--panel-text); line-height: 1.2;
+      letter-spacing: -.01em;
+    }
+    .step p {
+      font-size: 14.5px; color: var(--panel-text-2); line-height: 1.6; max-width: 60ch;
+    }
+    .step .code-mini {
+      background: var(--panel-2);
+      border-radius: 10px;
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--ff-mono); font-size: 13px;
+      color: var(--panel-text); line-height: 1.6;
+      overflow-x: auto;
+    }
+
+    /* ── benefit ticker ── */
+    .ticker {
+      padding: var(--space-7) var(--space-5);
+      max-width: 1080px; margin: 0 auto;
+    }
+    .ticker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: var(--space-3);
+    }
+    .ticker-cell {
+      background: var(--panel-1);
+      border-radius: 18px;
+      padding: var(--space-5);
+      display: flex; flex-direction: column; gap: var(--space-2);
+    }
+    .ticker-cell .num {
+      font-family: var(--ff-display);
+      font-size: 44px; line-height: 1;
+      letter-spacing: -.02em;
+      color: var(--panel-text);
+    }
+    .ticker-cell .num .accent { color: var(--green); }
+    .ticker-cell .label {
+      font-size: 13px; color: var(--panel-text-2); line-height: 1.4;
+    }
+    .ticker-cell .meta {
+      font-family: var(--ff-mono); font-size: 11px;
+      color: var(--panel-text-3);
+      letter-spacing: .04em;
+    }
+
+    /* ── before / after ── */
+    .compare {
+      padding: 0 var(--space-5);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+    }
+    @media (max-width: 760px) { .compare { grid-template-columns: 1fr; } }
+    .compare-card {
+      background: var(--panel-1);
+      border-radius: 20px; overflow: hidden;
+    }
+    .compare-card.before { box-shadow: inset 4px 0 0 var(--flame); }
+    .compare-card.after { box-shadow: inset 4px 0 0 var(--green); }
+    .compare-card .head {
+      padding: var(--space-3) var(--space-5);
+      background: var(--panel-2);
+      font-family: var(--ff-mono); font-size: 12px; font-weight: 600;
+      letter-spacing: .04em;
+      display: flex; align-items: center; gap: var(--space-2);
+    }
+    .compare-card.before .head { color: var(--flame); }
+    .compare-card.after .head { color: var(--green); }
+    .compare-card .head .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .compare-card.before .head .dot { background: var(--flame); }
+    .compare-card.after .head .dot { background: var(--green); }
+    .compare-card pre {
+      padding: var(--space-5);
+      font-family: var(--ff-mono); font-size: 12.5px;
+      line-height: 1.65; color: var(--panel-text);
+      overflow-x: auto;
+    }
+
+    /* ── code block ── */
+    .code-block {
+      background: var(--panel-1);
+      border-radius: 20px; overflow: hidden;
+      margin-bottom: var(--space-4);
+      box-shadow: inset 4px 0 0 var(--purple);
+    }
+    .code-head {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-3) var(--space-5);
+      background: var(--panel-2);
+    }
+    .code-head .file {
+      font-family: var(--ff-mono); font-size: 12px;
+      color: var(--panel-text-2);
+    }
+    .code-head .pip-row { display: flex; gap: 5px; }
+    .code-head .pip-row span { width: 9px; height: 9px; border-radius: 50%; }
+    .code-head .copy-btn {
+      margin-left: auto;
+      padding: 4px 12px; border-radius: 999px;
+      background: transparent; border: none;
+      font-family: var(--ff-mono); font-size: 11px; font-weight: 600;
+      color: var(--panel-text-2); cursor: pointer;
+      transition: background 80ms, color 80ms;
+    }
+    .code-head .copy-btn:hover { background: var(--panel-hover); color: var(--panel-text); }
+    .code-block pre {
+      padding: var(--space-5) var(--space-6);
+      overflow-x: auto;
+      font-family: var(--ff-mono); font-size: 13px;
+      line-height: 1.7; color: var(--panel-text);
+    }
+    .kw  { color: var(--purple); font-weight: 600; }
+    .fn  { color: var(--link); }
+    .str { color: #C06010; }
+    .cmt { color: var(--panel-text-3); font-style: italic; }
+    .num { color: var(--mascot); }
+    @media (prefers-color-scheme: dark) {
+      .kw { color: #C495D8; }
+      .fn { color: #79A8FF; }
+      .str { color: #E09060; }
+      .num { color: #F4A6CC; }
+    }
+
+    /* ── hooks grid ── */
+    .hooks-frame { padding: 0 var(--space-5); }
+    .hooks-legend {
+      display: flex; gap: var(--space-4); flex-wrap: wrap;
+      margin-bottom: var(--space-4);
+      font-family: var(--ff-mono); font-size: 11px;
+      color: var(--panel-text-2);
+    }
+    .hooks-legend .item { display: flex; align-items: center; gap: 6px; }
+    .hooks-legend .item .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .hook-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: var(--space-2);
+    }
+    .hook-row {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: 12px 14px;
+      background: var(--panel-1);
+      border-radius: 12px;
+      transition: background 80ms;
+    }
+    .hook-row:hover { background: var(--panel-hover); }
+    .hook-row.rail-green { box-shadow: inset 4px 0 0 var(--green); }
+    .hook-row.rail-purple { box-shadow: inset 4px 0 0 var(--purple); }
+    .hook-row.rail-mascot { box-shadow: inset 4px 0 0 var(--mascot); }
+    .hook-row.rail-sun { box-shadow: inset 4px 0 0 var(--sun); }
+    .hook-row.rail-flame { box-shadow: inset 4px 0 0 var(--flame); }
+    .hook-row.rail-sky { box-shadow: inset 4px 0 0 var(--sky); }
+    .hook-row .name {
+      font-family: var(--ff-mono); font-size: 12px; font-weight: 600;
+      color: var(--panel-text); flex: 1;
+    }
+    .hook-row .agents {
+      display: flex; gap: 3px;
+    }
+    .hook-row .agent-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      opacity: .25;
+    }
+    .hook-row.has-claude .agent-dot.claude { opacity: 1; background: var(--green); }
+    .hook-row.has-opencode .agent-dot.opencode { opacity: 1; background: var(--sky); }
+    .hook-row.has-windsurf .agent-dot.windsurf { opacity: 1; background: var(--purple); }
+    .hook-row.has-pi .agent-dot.pi { opacity: 1; background: var(--sun); }
+
+    /* ── adapters ── */
+    .adapters-frame { padding: 0 var(--space-5); }
+    .adapters-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: var(--space-3);
+    }
+    .adapter {
+      background: var(--panel-1);
+      border-radius: 18px;
+      padding: var(--space-5);
+      display: flex; flex-direction: column; gap: var(--space-2);
+      transition: background 100ms;
+    }
+    .adapter:hover { background: var(--panel-hover); }
+    .adapter.rail-green { box-shadow: inset 4px 0 0 var(--green); }
+    .adapter.rail-sky { box-shadow: inset 4px 0 0 var(--sky); }
+    .adapter.rail-purple { box-shadow: inset 4px 0 0 var(--purple); }
+    .adapter.rail-mascot { box-shadow: inset 4px 0 0 var(--mascot); }
+    .adapter.rail-sun { box-shadow: inset 4px 0 0 var(--sun); }
+    .adapter.rail-flame { box-shadow: inset 4px 0 0 var(--flame); }
+    .adapter .glyph {
+      font-family: var(--ff-mono); font-size: 22px; line-height: 1;
+      color: var(--panel-text);
+    }
+    .adapter .name {
+      font-family: var(--ff-ui); font-size: 17px; font-weight: 700;
+      color: var(--panel-text);
+      letter-spacing: -.01em;
+    }
+    .adapter .desc {
+      font-size: 13.5px; color: var(--panel-text-2); line-height: 1.55;
+    }
+    .adapter .imp {
+      font-family: var(--ff-mono); font-size: 11px;
+      color: var(--panel-text-3);
+      margin-top: 2px;
+    }
+    .adapter .status {
+      margin-top: auto; padding-top: var(--space-2);
+      display: flex; align-items: center; gap: 6px;
+      font-family: var(--ff-mono); font-size: 11px; font-weight: 600;
+      letter-spacing: .04em;
+    }
+    .adapter .status .pip { width: 7px; height: 7px; border-radius: 50%; }
+    .adapter .status.stable { color: var(--green); }
+    .adapter .status.stable .pip { background: var(--green); }
+    .adapter .status.beta { color: var(--sun); }
+    .adapter .status.beta .pip { background: #C9A33A; }
+    .adapter .status.planned { color: var(--panel-text-3); }
+    .adapter .status.planned .pip { background: var(--panel-text-3); }
+
+    /* ── faq ── */
+    .faq-frame { padding: 0 var(--space-5); display: flex; flex-direction: column; gap: var(--space-2); }
+    .faq-row {
+      background: var(--panel-1);
+      border-radius: 14px;
+      padding: var(--space-4) var(--space-5);
+      box-shadow: inset 4px 0 0 var(--mascot);
+    }
+    .faq-row summary {
+      font-family: var(--ff-ui); font-size: 16px; font-weight: 600;
+      color: var(--panel-text); cursor: pointer;
+      list-style: none;
+      display: flex; align-items: center; gap: var(--space-3);
+    }
+    .faq-row summary::-webkit-details-marker { display: none; }
+    .faq-row summary .marker {
+      font-family: var(--ff-mono); color: var(--mascot); font-size: 14px;
+      transition: transform 120ms;
+    }
+    .faq-row[open] summary .marker { transform: rotate(45deg); }
+    .faq-row p {
+      margin-top: var(--space-3);
+      font-size: 14.5px; color: var(--panel-text-2); line-height: 1.6;
+      max-width: 60ch;
+    }
+    .faq-row p code {
+      font-family: var(--ff-mono); font-size: 12.5px;
+      background: var(--panel-2);
+      padding: 2px 6px; border-radius: 4px;
+      color: var(--panel-text);
+    }
+
+    /* ── manifesto strip ── */
+    .manifesto {
+      max-width: 1080px; margin: var(--space-7) auto;
+      padding: var(--space-7) var(--space-6);
+      background: var(--panel-1);
+      border-radius: 24px;
+      box-shadow: inset 4px 0 0 var(--purple);
+    }
+    .manifesto h2 {
+      font-family: var(--ff-display);
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1; letter-spacing: -.02em;
+      color: var(--panel-text);
+      margin-bottom: var(--space-5);
+      max-width: 24ch;
+    }
+    .manifesto p {
+      font-size: 16px; color: var(--panel-text); line-height: 1.65;
+      max-width: 60ch;
+      margin-bottom: var(--space-3);
+    }
+    .manifesto p .stress { color: var(--green); font-weight: 700; }
+
+    /* ── cta ── */
+    .cta {
+      max-width: 1080px; margin: 0 auto var(--space-8);
+      padding: var(--space-7) var(--space-6);
+      text-align: center;
+      background: var(--panel-1);
+      border-radius: 24px;
+      box-shadow: inset 4px 0 0 var(--green);
+    }
+    .cta h2 {
+      font-family: var(--ff-display);
+      font-size: clamp(40px, 7vw, 80px);
+      line-height: .95; letter-spacing: -.03em;
+      color: var(--panel-text);
+      margin-bottom: var(--space-4);
+    }
+    .cta h2 .accent { color: var(--green); }
+    .cta p {
+      font-size: 17px; color: var(--panel-text-2);
+      max-width: 50ch; margin: 0 auto var(--space-5);
+    }
+    .cta .actions { display: flex; gap: var(--space-3); justify-content: center; flex-wrap: wrap; }
+
+    /* ── footer ── */
+    .footer {
+      padding: var(--space-6) var(--space-5);
+      max-width: 1080px; margin: 0 auto;
+      display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3);
+      font-family: var(--ff-mono); font-size: 11px;
+      color: var(--panel-text-3);
+    }
+    .footer a { color: inherit; }
+    .footer a:hover { color: var(--panel-text); text-decoration: none; }
+    .footer .glyph { color: var(--green); }
+    .footer .spacer { flex: 1; }
+
+    /* ── animations ── */
+    @keyframes pulse { 0%,100%{opacity:.55} 50%{opacity:1} }
+    @keyframes drift { 0%,100% { transform: translateX(0); } 50% { transform: translateX(8px); } }
+    .pip { animation: pulse 2.4s ease infinite; }
+
+    /* ── responsive ── */
+    @media (max-width: 720px) {
+      .topbar nav .ext { display: none; }
+      .step { grid-template-columns: 40px 1fr; padding: var(--space-4); }
+      .step .step-num { font-size: 22px; }
+      .install-bar { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="glyph">◰</span>
+    <span>plugsdk</span>
+    <span class="pip"></span>
+  </div>
+  <nav>
+    <a href="#when">when</a>
+    <a href="#why">why</a>
+    <a href="#how">how</a>
+    <a href="#hooks">hooks</a>
+    <a href="#adapters">adapters</a>
+    <a href="https://github.com/AnEntrypoint/plugsdk" target="_blank" rel="noopener" class="ext">github ↗</a>
+    <a href="https://www.npmjs.com/package/plugsdk" target="_blank" rel="noopener" class="ext">npm ↗</a>
+  </nav>
+</header>
+
+<!-- ── HERO ────────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-eyebrow">
+    <span class="pip"></span>
+    universal plugin sdk · live on npm
+  </div>
+  <h1>
+    write a plugin <span class="accent">once.</span><br>
+    deploy it <span class="accent-mascot">everywhere.</span>
+  </h1>
+  <p class="hero-lede">
+    one hook file, every ai agent. <strong>plugsdk</strong> normalizes
+    18 hook types across claude code, opencode, windsurf — and whatever ships next.
+    no rewrites, no fork-per-agent, no lost weekends translating json shapes.
+  </p>
+  <div class="hero-actions">
+    <a class="btn btn-primary" href="#how">show me how <span class="arrow">→</span></a>
+    <a class="btn btn-ghost" href="https://github.com/AnEntrypoint/plugsdk" target="_blank" rel="noopener">source on github</a>
+  </div>
+  <div class="hero-badges">
+    <span class="badge"><span class="dot green"></span> 3 adapters live</span>
+    <span class="badge"><span class="dot mascot"></span> 18 hook types</span>
+    <span class="badge"><span class="dot sun"></span> mit license</span>
+    <span class="badge"><span class="dot sky"></span> zero deps</span>
+  </div>
+</section>
+
+<!-- ── INSTALL ───────────────────────────────────────────────────────────── -->
+<div class="install-bar">
+  <div class="install-cli">
+    <span class="prompt">$</span>
+    <code id="install-cmd">npm install plugsdk</code>
+    <button class="copy-btn" onclick="copyInstall(this)">copy</button>
+  </div>
+  <div class="install-meta">
+    <div class="stat"><span class="pip"></span><span class="num" id="npm-version">v1.0.x</span></div>
+    <div class="stat">·</div>
+    <div class="stat"><span class="num">11.9 kB</span> tarball</div>
+  </div>
+</div>
+
+<!-- ── WHEN: scenarios ──────────────────────────────────────────────────── -->
+<section class="section" id="when">
+  <div class="section-head">
+    <div class="section-eyebrow">when you reach for it</div>
+    <h2 class="section-h2">three moments<br>you'll thank yourself.</h2>
+    <p class="section-lede">
+      every team hits these walls within the first week of building agent plugins.
+      plugsdk is the answer you wish you'd had on day zero.
+    </p>
+  </div>
+  <div class="when-grid">
+
+    <div class="scenario rail-green">
+      <div class="when-tag"><span class="dot green"></span> shipping a guardrail</div>
+      <h3>you need to block <code style="font-family:var(--ff-mono);font-size:.8em">rm -rf /</code> in every editor your team uses.</h3>
+      <p>
+        your devs are split across claude code, cursor, windsurf, opencode.
+        one shell-execute hook should cover all four — but each tool wants its own hook shape.
+      </p>
+      <p class="quote">we wrote it once in plugsdk. four agents covered before lunch.</p>
+    </div>
+
+    <div class="scenario rail-sun">
+      <div class="when-tag"><span class="dot sun"></span> auditing tool calls</div>
+      <h3>compliance asks: <em style="font-style:italic">what touched production yesterday?</em></h3>
+      <p>
+        you need every <code style="font-family:var(--ff-mono);font-size:.85em">pre_tool_use</code> event,
+        with session id and input payload, written to your audit log — regardless of which agent fired it.
+      </p>
+      <p class="quote">one normalized event shape feeding one log pipeline. legal stopped emailing.</p>
+    </div>
+
+    <div class="scenario rail-mascot">
+      <div class="when-tag"><span class="dot mascot"></span> exposing a custom tool</div>
+      <h3>your internal API needs an mcp-style tool for every agent — including the ones not built yet.</h3>
+      <p>
+        define <code style="font-family:var(--ff-mono);font-size:.85em">tools: { ... }</code> once.
+        new adapter ships → your tool is already wired. no migration, no rewrite.
+      </p>
+      <p class="quote">future-proofing tool surface is the real benefit. that's the lock-in killer.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── WHY: problem / solution ──────────────────────────────────────────── -->
+<section class="section" id="why">
+  <div class="section-head">
+    <div class="section-eyebrow">why it matters</div>
+    <h2 class="section-h2">the agent landscape<br>is fracturing.</h2>
+    <p class="section-lede">
+      every agent vendor is shipping their own hook format, their own tool registration shape,
+      their own settings file. write a plugin for one, you've written it for one.
+      that's a tax on every line of plugin code you ship.
+    </p>
+  </div>
+  <div class="why-grid">
+
+    <div class="why-card problem">
+      <div class="label"><span class="dot"></span> without plugsdk</div>
+      <h3>you build it n times.</h3>
+      <ul class="why-list">
+        <li><span class="num">01</span><span>relearn each agent's hook lifecycle from scratch.</span></li>
+        <li><span class="num">02</span><span>maintain 4 codebases for the same logical feature.</span></li>
+        <li><span class="num">03</span><span>diverge over time as each fork rots independently.</span></li>
+        <li><span class="num">04</span><span>watch a new agent ship and start the loop again.</span></li>
+        <li><span class="num">05</span><span class="strike">ship anything else this quarter.</span></li>
+      </ul>
+    </div>
+
+    <div class="why-card solution">
+      <div class="label"><span class="dot"></span> with plugsdk</div>
+      <h3>you build it once.</h3>
+      <ul class="why-list">
+        <li><span class="num">01</span><span>one canonical <code style="font-family:var(--ff-mono);font-size:.9em">HookType</code> enum across every agent.</span></li>
+        <li><span class="num">02</span><span>adapters translate i/o shape — your code stays clean.</span></li>
+        <li><span class="num">03</span><span>auto-detect which agent is calling at runtime.</span></li>
+        <li><span class="num">04</span><span>new agent ships → write a 60-line adapter, ship same plugin.</span></li>
+        <li><span class="num">05</span><span>get back to writing the actual feature.</span></li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── BENEFIT TICKER ──────────────────────────────────────────────────── -->
+<section class="ticker">
+  <div class="ticker-grid">
+    <div class="ticker-cell">
+      <div class="num"><span class="accent">1</span> plugin</div>
+      <div class="label">written, not three. tested, not three.</div>
+      <div class="meta">// reduce surface</div>
+    </div>
+    <div class="ticker-cell">
+      <div class="num"><span class="accent">3</span> adapters</div>
+      <div class="label">claude · opencode · windsurf shipping today.</div>
+      <div class="meta">// cover the field</div>
+    </div>
+    <div class="ticker-cell">
+      <div class="num"><span class="accent">18</span> hooks</div>
+      <div class="label">every event the agent emits, normalized.</div>
+      <div class="meta">// no gaps</div>
+    </div>
+    <div class="ticker-cell">
+      <div class="num"><span class="accent">~60</span> lines</div>
+      <div class="label">to add a brand-new agent adapter.</div>
+      <div class="meta">// future-proof</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW: 4-step ladder ──────────────────────────────────────────────── -->
+<section class="section" id="how">
+  <div class="section-head">
+    <div class="section-eyebrow">how you wire it</div>
+    <h2 class="section-h2">four steps,<br>five minutes.</h2>
+    <p class="section-lede">
+      no build step, no scaffold, no framework. just node, a plugin file, and a settings entry.
+    </p>
+  </div>
+  <div class="how-stage">
+
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-body">
+        <h4>install once.</h4>
+        <p>plugsdk is a single npm package. zero runtime dependencies. esm-only, node 18+.</p>
+        <div class="code-mini">npm install plugsdk</div>
+      </div>
+    </div>
+
+    <div class="step purple">
+      <div class="step-num">02</div>
+      <div class="step-body">
+        <h4>define your plugin.</h4>
+        <p>one object: <code style="font-family:var(--ff-mono)">name</code>, <code style="font-family:var(--ff-mono)">hooks</code>, <code style="font-family:var(--ff-mono)">tools</code>. handlers receive a normalized event shape regardless of which agent fired it.</p>
+        <div class="code-mini">import { definePlugin, HookType } from 'plugsdk'</div>
+      </div>
+    </div>
+
+    <div class="step sun">
+      <div class="step-num">03</div>
+      <div class="step-body">
+        <h4>pick an adapter.</h4>
+        <p>each agent gets a thin runner that handles its native i/o protocol — stdin/stdout for claude, json files for opencode, extension api for windsurf.</p>
+        <div class="code-mini">import { runClaudeHook } from 'plugsdk/adapters/claude'</div>
+      </div>
+    </div>
+
+    <div class="step mascot">
+      <div class="step-num">04</div>
+      <div class="step-body">
+        <h4>wire it once.</h4>
+        <p>point the agent's settings file at your script. the runner auto-detects which hook type fired and dispatches to your handler. you never see the wire format.</p>
+        <div class="code-mini">// .claude/settings.json → hooks → command: "node my-plugin.js"</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── BEFORE / AFTER ──────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="section-head">
+    <div class="section-eyebrow">before · after</div>
+    <h2 class="section-h2">same feature.<br>half the code.</h2>
+    <p class="section-lede">
+      a guardrail that blocks <code style="font-family:var(--ff-mono);font-size:.85em">rm -rf /</code> across claude code and opencode.
+      compare what you'd write by hand against what plugsdk gives you.
+    </p>
+  </div>
+  <div class="compare">
+    <div class="compare-card before">
+      <div class="head"><span class="dot"></span> before · two files, two protocols</div>
+      <pre><span class="cmt">// claude-guard.js — reads stdin, writes stdout</span>
+<span class="kw">const</span> input = <span class="fn">JSON</span>.<span class="fn">parse</span>(<span class="kw">await</span> readStdin())
+<span class="kw">if</span> (input.tool_name === <span class="str">'Bash'</span>) {
+  <span class="kw">const</span> cmd = input.tool_input?.command ?? <span class="str">''</span>
+  <span class="kw">if</span> (/<span class="str">rm\s+-rf\s+\//</span>.test(cmd)) {
+    process.stdout.<span class="fn">write</span>(<span class="fn">JSON</span>.<span class="fn">stringify</span>({
+      hookSpecificOutput: {
+        permissionDecision: <span class="str">'deny'</span>,
+        permissionDecisionReason: <span class="str">'dangerous rm'</span>
+      }
+    }))
+    process.<span class="fn">exit</span>(<span class="num">0</span>)
+  }
+}
+
+<span class="cmt">// opencode-guard.js — different shape entirely</span>
+<span class="kw">export default</span> {
+  hooks: {
+    <span class="str">'tool.execute.before'</span>(input, output) {
+      <span class="kw">if</span> (input.tool === <span class="str">'bash'</span> &&
+          /<span class="str">rm\s+-rf\s+\//</span>.test(input.args?.command)) {
+        <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">'dangerous rm'</span>)
+      }
+    }
+  }
+}</pre>
+    </div>
+    <div class="compare-card after">
+      <div class="head"><span class="dot"></span> after · one plugin, every agent</div>
+      <pre><span class="cmt">// guard.js — works everywhere</span>
+<span class="kw">import</span> { definePlugin, HookType } <span class="kw">from</span> <span class="str">'plugsdk'</span>
+<span class="kw">import</span> { runClaudeHook } <span class="kw">from</span> <span class="str">'plugsdk/adapters/claude'</span>
+
+<span class="kw">const</span> plugin = <span class="fn">definePlugin</span>({
+  name: <span class="str">'shell-guard'</span>,
+  hooks: {
+    [HookType.<span class="num">SHELL_EXECUTE</span>]: <span class="kw">async</span> (event) =&gt; {
+      <span class="kw">const</span> cmd = event.input?.command ?? <span class="str">''</span>
+      <span class="kw">if</span> (/<span class="str">rm\s+-rf\s+\//</span>.test(cmd)) {
+        <span class="kw">return</span> { behavior: <span class="str">'block'</span>, reason: <span class="str">'dangerous rm'</span> }
+      }
+      <span class="kw">return</span> { behavior: <span class="str">'allow'</span> }
+    }
+  }
+})
+
+<span class="fn">runClaudeHook</span>(plugin)
+<span class="cmt">// same plugin → swap adapter for opencode/windsurf.</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ── FULL EXAMPLE ────────────────────────────────────────────────────── -->
+<section class="section" id="usage">
+  <div class="section-head">
+    <div class="section-eyebrow">full example</div>
+    <h2 class="section-h2">an audit-logger,<br>start to finish.</h2>
+    <p class="section-lede">
+      logs every tool call, blocks dangerous shells, exposes a custom env-reader tool — across every agent.
+      copy this file, name it, ship it.
+    </p>
+  </div>
+  <div style="padding:0 var(--space-5)">
+  <div class="code-block">
+    <div class="code-head">
+      <div class="pip-row">
+        <span style="background:#FF8454"></span>
+        <span style="background:#FFD86B"></span>
+        <span style="background:#3F8A4A"></span>
+      </div>
+      <span class="file">my-plugin.js</span>
+      <button class="copy-btn" onclick="copyCode('example-code', this)">copy</button>
+    </div>
+    <pre id="example-code"></pre>
+  </div>
+  <div class="code-block" style="box-shadow: inset 4px 0 0 var(--mascot)">
+    <div class="code-head">
+      <div class="pip-row">
+        <span style="background:#FF8454"></span>
+        <span style="background:#FFD86B"></span>
+        <span style="background:#3F8A4A"></span>
+      </div>
+      <span class="file">.claude/settings.json — wire it once</span>
+      <button class="copy-btn" onclick="copyCode('settings-code', this)">copy</button>
+    </div>
+    <pre id="settings-code"></pre>
+  </div>
+  </div>
+</section>
+
+<!-- ── HOOKS GRID ──────────────────────────────────────────────────────── -->
+<section class="section" id="hooks">
+  <div class="section-head">
+    <div class="section-eyebrow">the hook surface</div>
+    <h2 class="section-h2">18 events,<br>one vocabulary.</h2>
+    <p class="section-lede">
+      every meaningful event an agent emits, normalized to a single canonical name.
+      filled dot = the agent supports it. empty dot = adapter falls back gracefully.
+    </p>
+  </div>
+  <div class="hooks-frame">
+    <div class="hooks-legend">
+      <div class="item"><span class="dot" style="background:var(--green)"></span> claude code</div>
+      <div class="item"><span class="dot" style="background:var(--sky)"></span> opencode</div>
+      <div class="item"><span class="dot" style="background:var(--purple)"></span> windsurf</div>
+      <div class="item" style="margin-left:auto">·</div>
+      <div class="item"><span class="dot" style="background:var(--green)"></span> tool · <span class="dot" style="background:var(--sky)"></span> session · <span class="dot" style="background:var(--mascot)"></span> file · <span class="dot" style="background:var(--sun)"></span> chat · <span class="dot" style="background:var(--flame)"></span> failure · <span class="dot" style="background:var(--purple)"></span> agent</div>
+    </div>
+    <div class="hook-grid" id="hook-grid"></div>
+  </div>
+</section>
+
+<!-- ── ADAPTERS ────────────────────────────────────────────────────────── -->
+<section class="section" id="adapters">
+  <div class="section-head">
+    <div class="section-eyebrow">where it ships</div>
+    <h2 class="section-h2">three adapters live.<br>the rest is one PR away.</h2>
+    <p class="section-lede">
+      each adapter implements 5 methods. add a new one in an afternoon —
+      every plugin written against plugsdk works with it on day one.
+    </p>
+  </div>
+  <div class="adapters-frame">
+    <div class="adapters-grid" id="adapters-grid"></div>
+  </div>
+</section>
+
+<!-- ── FAQ ─────────────────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="section-head">
+    <div class="section-eyebrow">straight answers</div>
+    <h2 class="section-h2">things you'll<br>actually ask.</h2>
+  </div>
+  <div class="faq-frame">
+
+    <details class="faq-row">
+      <summary><span class="marker">+</span> is this just an abstraction layer i'll regret?</summary>
+      <p>
+        no. plugsdk is ~1,100 lines total, zero runtime deps, and every adapter is &lt;100 lines you can read in one sitting.
+        the canonical event shape is a thin object (<code>toolName</code>, <code>input</code>, <code>sessionId</code>, …) that maps cleanly onto every agent's native shape — there's no clever runtime, no plugin registry, no metaprogramming.
+        if an adapter ever rots, you swap it for your own and your plugin code doesn't change.
+      </p>
+    </details>
+
+    <details class="faq-row">
+      <summary><span class="marker">+</span> what happens when an agent emits a hook the others don't have?</summary>
+      <p>
+        the canonical <code>HookType</code> covers every event we've seen across the field.
+        if claude has <code>pre_compact</code> and opencode doesn't, the opencode adapter never dispatches that hook — your handler simply doesn't fire there.
+        no synthetic events, no fake fallbacks. you can also branch on <code>event.agent</code> if you genuinely need agent-specific behavior.
+      </p>
+    </details>
+
+    <details class="faq-row">
+      <summary><span class="marker">+</span> why not just use mcp?</summary>
+      <p>
+        mcp is great for <em>tools</em> — exposing capabilities to an agent. plugsdk's <code>tools:</code> field maps cleanly to mcp where the agent supports it.
+        but mcp doesn't cover <em>hooks</em> — the agent's lifecycle events, permission decisions, file-edit interception, session tracking. that's the gap plugsdk fills.
+        use both: tools via mcp where supported, hooks via plugsdk everywhere.
+      </p>
+    </details>
+
+    <details class="faq-row">
+      <summary><span class="marker">+</span> how do i add a custom adapter?</summary>
+      <p>
+        implement <code>AgentAdapter</code> — five methods: <code>detect()</code>, <code>getHookType()</code>, <code>translateHookInput()</code>, <code>translateHookOutput()</code>, <code>getToolPayload()</code>.
+        the existing claude/opencode/windsurf adapters are your reference. typical adapter is 60–80 lines.
+        once it's written, every plugin already in the ecosystem works on your new agent — that's the whole point.
+      </p>
+    </details>
+
+    <details class="faq-row">
+      <summary><span class="marker">+</span> production-ready?</summary>
+      <p>
+        the runtime is. it's a single class with no external state and an fs-test shape that you can pin and audit.
+        the adapter set is the moving part — claude and opencode are stable; windsurf is beta because the extension api still shifts.
+        version-pin in your <code>package.json</code> like anything else, watch the changelog when you upgrade.
+      </p>
+    </details>
+
+  </div>
+</section>
+
+<!-- ── MANIFESTO ───────────────────────────────────────────────────────── -->
+<section class="manifesto">
+  <h2>the only abstraction<br>worth shipping is the<br>one you'd write yourself.</h2>
+  <p>
+    plugsdk is what you'd build by hand on the second project, after writing the same hook three times and noticing.
+    we just wrote it once so you don't have to. <span class="stress">small core, thin adapters, no magic.</span>
+  </p>
+  <p>
+    every line is on github. every adapter is &lt;100 lines. nothing imports a runtime you can't read in a sitting.
+    if a shape breaks, fork the adapter — your plugin code stays put.
+  </p>
+  <p>the goal isn't lock-in. it's <span class="stress">unlock</span>.</p>
+</section>
+
+<!-- ── CTA ─────────────────────────────────────────────────────────────── -->
+<section class="cta">
+  <h2>ship the plugin.<br><span class="accent">ignore the agent.</span></h2>
+  <p>one hook file. every editor your team uses. every agent that ships next.</p>
+  <div class="actions">
+    <a class="btn btn-primary" href="#how">read the four steps <span class="arrow">→</span></a>
+    <a class="btn btn-ghost" href="https://www.npmjs.com/package/plugsdk" target="_blank" rel="noopener">npm ↗</a>
+    <a class="btn btn-ghost" href="https://github.com/AnEntrypoint/plugsdk" target="_blank" rel="noopener">github ↗</a>
+  </div>
+</section>
+
+<footer class="footer">
+  <span class="glyph">◰</span>
+  <span>plugsdk</span>
+  <span>·</span>
+  <a href="https://github.com/AnEntrypoint/plugsdk/blob/main/LICENSE">MIT</a>
+  <span>·</span>
+  <a href="https://github.com/AnEntrypoint">AnEntrypoint</a>
+  <span class="spacer"></span>
+  <span>// 247420 design system</span>
+  <span>·</span>
+  <span id="npm-version-foot">v—</span>
+</footer>
+
+<script type="module">
+// ── data ───────────────────────────────────────────────────────────────
+const HOOKS = [
+  { name: 'pre_tool_use',          rail: 'green',  agents: ['claude','opencode','windsurf','pi'] },
+  { name: 'post_tool_use',         rail: 'green',  agents: ['claude','opencode','windsurf','pi'] },
+  { name: 'post_tool_use_failure', rail: 'flame',  agents: ['claude','pi'] },
+  { name: 'session_start',         rail: 'sky',    agents: ['claude','opencode','pi'] },
+  { name: 'session_end',           rail: 'sky',    agents: ['claude','opencode','pi'] },
+  { name: 'permission_ask',        rail: 'purple', agents: ['claude','opencode','pi'] },
+  { name: 'file_read',             rail: 'mascot', agents: ['claude','pi'] },
+  { name: 'file_write',            rail: 'mascot', agents: ['claude','windsurf','pi'] },
+  { name: 'shell_execute',         rail: 'green',  agents: ['claude','opencode','pi'] },
+  { name: 'prompt_submit',         rail: 'sun',    agents: ['claude','pi'] },
+  { name: 'before_prompt',         rail: 'sun',    agents: ['opencode'] },
+  { name: 'after_response',        rail: 'sun',    agents: ['claude','opencode','pi'] },
+  { name: 'subagent_start',        rail: 'purple', agents: ['claude'] },
+  { name: 'subagent_stop',         rail: 'purple', agents: ['claude'] },
+  { name: 'pre_compact',           rail: 'flame',  agents: ['claude','pi'] },
+  { name: 'chat_message',          rail: 'sun',    agents: ['opencode','windsurf','pi'] },
+  { name: 'mcp_tool_use',          rail: 'green',  agents: ['claude'] },
+  { name: 'setup_worktree',        rail: 'purple', agents: ['claude'] },
+]
+
+const ADAPTERS = [
+  { glyph: '◎', name: 'Claude Code',       rail: 'green',  desc: "Anthropic's official CLI. Hooks via stdin/stdout JSON. Supports all 18 hook types.", status: 'stable',  imp: 'plugsdk/adapters/claude' },
+  { glyph: '▰', name: 'OpenCode',          rail: 'sky',    desc: "SST's open-source agent. Plugin hooks via opencode.json. Tool, permission and shell events.", status: 'stable',  imp: 'plugsdk/adapters/opencode' },
+  { glyph: '◐', name: 'Windsurf',          rail: 'purple', desc: "Codeium's IDE agent. Cascade events via extension API. File-edit and terminal hooks.", status: 'beta',    imp: 'plugsdk/adapters/windsurf' },
+  { glyph: '◉', name: 'Pi',                rail: 'sun',    desc: "Inflection's AI harness. Tool, permission, turn and session lifecycle events via JSON payloads.", status: 'beta',    imp: 'plugsdk/adapters/pi' },
+  { glyph: '◌', name: 'VS Code · Copilot', rail: 'sun',    desc: 'GitHub Copilot extension hooks and Language Model API tool calls.', status: 'planned', imp: null },
+  { glyph: '◌', name: 'Cursor',            rail: 'mascot', desc: 'AI-first code editor. Rules and tool interception via .cursorrules adapter.', status: 'planned', imp: null },
+  { glyph: '✦', name: 'Build your own',    rail: 'flame',  desc: 'Implement AgentAdapter — 5 methods, ~60 lines. Every plugsdk plugin works with it on day one.', status: 'stable',  imp: 'AgentAdapter interface' },
+]
+
+// ── render hooks ───────────────────────────────────────────────────────
+const hookGrid = document.getElementById('hook-grid')
+for (const h of HOOKS) {
+  const row = document.createElement('div')
+  const klass = ['hook-row', `rail-${h.rail}`]
+  for (const a of h.agents) klass.push(`has-${a}`)
+  row.className = klass.join(' ')
+  row.innerHTML = `
+    <span class="name">${h.name}</span>
+    <span class="agents">
+      <span class="agent-dot claude"></span>
+      <span class="agent-dot opencode"></span>
+      <span class="agent-dot windsurf"></span>
+      <span class="agent-dot pi"></span>
+    </span>
+  `
+  hookGrid.appendChild(row)
+}
+
+// ── render adapters ────────────────────────────────────────────────────
+const adGrid = document.getElementById('adapters-grid')
+for (const a of ADAPTERS) {
+  const card = document.createElement('div')
+  card.className = `adapter rail-${a.rail}`
+  card.innerHTML = `
+    <div class="glyph">${a.glyph}</div>
+    <div class="name">${a.name}</div>
+    <div class="desc">${a.desc}</div>
+    ${a.imp ? `<div class="imp">${a.imp}</div>` : ''}
+    <div class="status ${a.status}"><span class="pip"></span>${a.status}</div>
+  `
+  adGrid.appendChild(card)
+}
+
+// ── code example ───────────────────────────────────────────────────────
+const exampleCode = `<span class="kw">import</span> { <span class="fn">definePlugin</span>, HookType } <span class="kw">from</span> <span class="str">'plugsdk'</span>
+<span class="kw">import</span> { <span class="fn">runClaudeHook</span> } <span class="kw">from</span> <span class="str">'plugsdk/adapters/claude'</span>
+
+<span class="kw">const</span> plugin = <span class="fn">definePlugin</span>({
+  name: <span class="str">'audit-logger'</span>,
+
+  hooks: {
+    <span class="cmt">// fires before every tool call in any agent</span>
+    [HookType.<span class="num">PRE_TOOL_USE</span>]: <span class="kw">async</span> (event) =&gt; {
+      <span class="cmt">// event.toolName, event.input, event.sessionId — normalized</span>
+      <span class="fn">console</span>.error(<span class="str">\`[\${event.toolName}] \${JSON.stringify(event.input)}\`</span>)
+      <span class="kw">return</span> { behavior: <span class="str">'allow'</span> }
+    },
+
+    <span class="cmt">// block dangerous shells across every agent</span>
+    [HookType.<span class="num">SHELL_EXECUTE</span>]: <span class="kw">async</span> (event) =&gt; {
+      <span class="kw">const</span> cmd = event.input?.command ?? <span class="str">''</span>
+      <span class="kw">if</span> (/<span class="str">rm\\s+-rf\\s+\\//</span>.test(cmd))
+        <span class="kw">return</span> { behavior: <span class="str">'block'</span>, reason: <span class="str">'dangerous rm'</span> }
+      <span class="kw">return</span> { behavior: <span class="str">'allow'</span> }
+    },
+  },
+
+  tools: {
+    <span class="cmt">// expose a custom tool to the agent — works on every adapter that supports tools</span>
+    <span class="str">'get_env'</span>: {
+      description: <span class="str">'Read a safe environment variable'</span>,
+      parameters: { name: { type: <span class="str">'string'</span> } },
+      execute: ({ name }) =&gt; process.env[name] ?? <span class="str">''</span>,
+    },
+  },
+})
+
+<span class="cmt">// claude code: reads JSON from stdin, writes result to stdout</span>
+<span class="fn">runClaudeHook</span>(plugin)
+<span class="cmt">// swap the import line for opencode / windsurf — same plugin object.</span>`
+
+document.getElementById('example-code').innerHTML = exampleCode
+
+const settingsCode = `<span class="cmt">// .claude/settings.json</span>
+{
+  <span class="str">"hooks"</span>: {
+    <span class="str">"PreToolUse"</span>: [{
+      <span class="str">"matcher"</span>: <span class="str">".*"</span>,
+      <span class="str">"hooks"</span>: [{ <span class="str">"type"</span>: <span class="str">"command"</span>, <span class="str">"command"</span>: <span class="str">"node my-plugin.js"</span> }]
+    }],
+    <span class="str">"PostToolUse"</span>: [{
+      <span class="str">"matcher"</span>: <span class="str">".*"</span>,
+      <span class="str">"hooks"</span>: [{ <span class="str">"type"</span>: <span class="str">"command"</span>, <span class="str">"command"</span>: <span class="str">"node my-plugin.js"</span> }]
+    }]
+  }
+}`
+document.getElementById('settings-code').innerHTML = settingsCode
+
+// ── npm version ────────────────────────────────────────────────────────
+fetch('https://registry.npmjs.org/plugsdk/latest')
+  .then(r => r.json())
+  .then(d => {
+    document.getElementById('npm-version').textContent = `v${d.version}`
+    document.getElementById('npm-version-foot').textContent = `v${d.version}`
+  })
+  .catch(() => {})
+
+// ── copy ───────────────────────────────────────────────────────────────
+window.copyInstall = (btn) => {
+  navigator.clipboard.writeText('npm install plugsdk').then(() => {
+    btn.textContent = 'copied'
+    setTimeout(() => { btn.textContent = 'copy' }, 1400)
+  })
+}
+window.copyCode = (id, btn) => {
+  const raw = document.getElementById(id).textContent
+  navigator.clipboard.writeText(raw).then(() => {
+    btn.textContent = 'copied'
+    setTimeout(() => { btn.textContent = 'copy' }, 1400)
+  })
+}
+</script>
+</body>
+</html>

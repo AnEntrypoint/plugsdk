@@ -1,0 +1,60 @@
+{
+  "name": "plugsdk",
+  "version": "1.0.26",
+  "description": "Host-side SDK — load Claude Code plugins inside your own application",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./adapters/claude": "./dist/adapters/claude.js",
+    "./loader": "./dist/loader/index.js",
+    "./browser": {
+      "import": "./dist/browser.js",
+      "types": "./dist/browser.d.ts"
+    },
+    "./idb": {
+      "import": "./dist/idb.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build:ci": "node scripts/build.mjs",
+    "test": "node test.js",
+    "prepublishOnly": "npm run build:ci"
+  },
+  "keywords": [
+    "claude-code",
+    "plugin-loader",
+    "plugin-host",
+    "hooks",
+    "marketplace",
+    "sdk"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AnEntrypoint/plugsdk.git"
+  },
+  "homepage": "https://anentrypoint.github.io/plugsdk/",
+  "dependencies": {
+    "@bjorn3/browser_wasi_shim": "^0.4.2"
+  }
+}
